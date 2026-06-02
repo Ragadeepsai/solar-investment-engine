@@ -1,6 +1,6 @@
 import streamlit as st
 from backend.api.nasa_power import fetch_irradiance
-from backend.api.geocoding import get_state
+from backend.api.geocoding import get_location_details
 from backend.data.processor import run_solar_engine
 
 st.set_page_config(page_title="Solar Decision Engine", layout="wide")
@@ -17,13 +17,16 @@ ev_owner = st.sidebar.checkbox("I own an EV (Adds ₹20,000/yr savings)", value=
 if st.sidebar.button("Calculate ROI", type="primary"):
     with st.spinner("Connecting to NASA Satellites & Geocoding..."):
         try:
-            state = get_state(lat, lon)
-            st.success(f"📍 Location identified: **{state}**")
+            loc_data = get_location_details(lat, lon)
+            state = loc_data["state"]
+            city = loc_data["city"]
+            display_loc = f"{city}, {state}" if city else state
+            
+            st.success(f"📍 Location identified: **{display_loc}**")
             
             nasa_df = fetch_irradiance(lat, lon)
             results = run_solar_engine(nasa_df, state, panel_area, panel_type, ev_owner)
             
-            # Display KPI Cards
             col1, col2, col3 = st.columns(3)
             col1.metric("Gross Upfront Cost", f"₹ {results['Gross Cost (INR)']:,}")
             col2.metric("PM Surya Ghar Subsidy", f"₹ {results['Subsidy (INR)']:,}")
@@ -34,7 +37,7 @@ if st.sidebar.button("Calculate ROI", type="primary"):
             col5.metric("Total Annual Savings", f"₹ {results['Annual Savings (INR)']:,}")
             col6.metric("System Size", f"{results['System Size (kW)']} kW")
             
-            st.info(f"💡 For a {panel_area} sqm roof in {state}, your {panel_type} system pays for itself in just {results['Payback Period (Years)']} years.")
+            st.info(f"💡 For a {panel_area} sqm roof in {display_loc}, your {panel_type} system pays for itself in just {results['Payback Period (Years)']} years.")
             
         except Exception as e:
             st.error(f"An error occurred: {e}")
