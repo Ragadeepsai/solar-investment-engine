@@ -1,4 +1,5 @@
 import streamlit as st
+import plotly.graph_objects as go
 from backend.api.nasa_power import fetch_irradiance
 from backend.api.geocoding import get_location_details
 from backend.data.processor import run_solar_engine
@@ -38,6 +39,29 @@ if st.sidebar.button("Calculate ROI", type="primary"):
             col6.metric("System Size", f"{results['System Size (kW)']} kW")
             
             st.info(f"💡 For a {panel_area} sqm roof in {display_loc}, your {panel_type} system pays for itself in just {results['Payback Period (Years)']} years.")
+            
+            st.markdown("---")
+            st.markdown("### 25-Year Cumulative Cash Flow")
+            fig = go.Figure()
+            years = list(range(26))
+            cf = results['Cumulative Cash Flow']
+            
+            fig.add_trace(go.Scatter(
+                x=years, y=cf,
+                mode='lines+markers',
+                name='Cumulative Cash Flow',
+                line=dict(color='#2ecc71', width=2),
+                fill='tozeroy',
+                fillcolor='rgba(46, 204, 113, 0.1)'
+            ))
+            fig.add_hline(y=0, line_dash='dash', line_color='red', annotation_text='Break-even')
+            fig.update_layout(
+                xaxis_title='Year',
+                yaxis_title='₹ Cash Flow',
+                hovermode='x unified',
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+            st.plotly_chart(fig, use_container_width=True)
             
         except Exception as e:
             st.error(f"An error occurred: {e}")

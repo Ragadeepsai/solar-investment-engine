@@ -46,11 +46,24 @@ def run_solar_engine(nasa_df: pd.DataFrame, state: str, panel_area: float, panel
         
     payback_years = out_of_pocket / annual_savings if annual_savings > 0 else 0
     
+    # Cumulative cash flow calculation (Year 0 to 25)
+    cumulative_cash_flow = [-out_of_pocket]
+    degradation_rate = 0.005
+    current_balance = -out_of_pocket
+    
+    for year in range(1, 26):
+        # Applying 0.5% degradation each year to the savings
+        degraded_savings = annual_savings * ((1 - degradation_rate) ** (year - 1))
+        current_balance += degraded_savings
+        cumulative_cash_flow.append(current_balance)
+        
     return {
         "System Size (kW)": round(system_size_kw, 2),
         "Gross Cost (INR)": round(gross_cost, 2),
         "Subsidy (INR)": round(subsidy, 2),
         "Out of Pocket (INR)": round(out_of_pocket, 2),
         "Annual Savings (INR)": round(annual_savings, 2),
-        "Payback Period (Years)": round(payback_years, 2)
+        "Payback Period (Years)": round(payback_years, 2),
+        "Cumulative Cash Flow": cumulative_cash_flow
     }
+

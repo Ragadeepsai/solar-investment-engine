@@ -3,4 +3,4 @@ pandas
 duckdb
 requests
 geopy
-plotly
+plotly==5.22.0
