@@ -4,10 +4,12 @@ from backend.api.nasa_power import fetch_irradiance
 from backend.api.geocoding import get_location_details
 from backend.data.processor import run_solar_engine
 
+# --- PAGE CONFIG ---
 st.set_page_config(page_title="Solar Decision Engine", layout="wide")
 st.title("☀️ Urban India Solar Investment Decision Engine")
 st.markdown("### Find out exactly when your solar panels will pay for themselves.")
 
+# --- SIDEBAR INPUTS ---
 st.sidebar.header("Location & Specs")
 lat = st.sidebar.number_input("Latitude", value=12.9716, format="%.4f")
 lon = st.sidebar.number_input("Longitude", value=77.5946, format="%.4f")
@@ -15,9 +17,11 @@ panel_area = st.sidebar.slider("Roof Area (sqm)", 10, 100, 25)
 panel_type = st.sidebar.selectbox("Panel Type", ["Budget", "Standard", "Premium"])
 ev_owner = st.sidebar.checkbox("I own an EV (Adds ₹20,000/yr savings)", value=False)
 
+# --- MAIN LOGIC ---
 if st.sidebar.button("Calculate ROI", type="primary"):
     with st.spinner("Connecting to NASA Satellites & Geocoding..."):
         try:
+            # 1. Geocoding
             loc_data = get_location_details(lat, lon)
             state = loc_data["state"]
             city = loc_data["city"]
@@ -25,9 +29,13 @@ if st.sidebar.button("Calculate ROI", type="primary"):
             
             st.success(f"📍 Location identified: **{display_loc}**")
             
+            # 2. NASA API Fetch
             nasa_df = fetch_irradiance(lat, lon)
+            
+            # 3. DuckDB SQL Processing
             results = run_solar_engine(nasa_df, state, panel_area, panel_type, ev_owner)
             
+            # 4. KPI Metrics Rendering
             col1, col2, col3 = st.columns(3)
             col1.metric("Gross Upfront Cost", f"₹ {results['Gross Cost (INR)']:,}")
             col2.metric("PM Surya Ghar Subsidy", f"₹ {results['Subsidy (INR)']:,}")
@@ -40,6 +48,7 @@ if st.sidebar.button("Calculate ROI", type="primary"):
             
             st.info(f"💡 For a {panel_area} sqm roof in {display_loc}, your {panel_type} system pays for itself in just {results['Payback Period (Years)']} years.")
             
+            # 5. Plotly Cash Flow Chart Rendering
             st.markdown("---")
             st.markdown("### 25-Year Cumulative Cash Flow")
             fig = go.Figure()
@@ -65,17 +74,18 @@ if st.sidebar.button("Calculate ROI", type="primary"):
             
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
 # --- ARCHITECTURE EXPANDER ---
-            st.markdown("---")
-            with st.expander("🛠️ How this engine works (Under the Hood)"):
-                st.markdown("""
-                ### The Data Engineering Pipeline
-                This application is not a static calculator. It is a dynamic data product powered by a real-time analytics pipeline:
-                
-                * 🛰️ **Live Satellite Telemetry (NASA POWER API):** When you input coordinates, the backend pings NASA's REST API to fetch over 2 decades of historical solar irradiance data for your exact micro-location.
-                * 📍 **Dynamic Geocoding (Nominatim):** Coordinates are reverse-geocoded to pinpoint your State, triggering a lookup against a custom database of 36 regional electricity tariffs.
-                * 🦆 **In-Memory SQL Analytics (DuckDB):** The raw JSON data from NASA is converted into Pandas DataFrames and aggregated in milliseconds using DuckDB's lightning-fast in-memory SQL engine.
-                * 🏛️ **Business Logic:** System sizing and out-of-pocket costs are dynamically calculated using the latest PM-Surya Ghar subsidy capacity tiers.
-                
-                *Architected and deployed by Sai Ragadeep using Python, DuckDB, and Streamlit.*
-                """)
+st.markdown("---")
+with st.expander("🛠️ How this engine works (Under the Hood)"):
+    st.markdown("""
+    ### The Data Engineering Pipeline
+    This application is not a static calculator. It is a dynamic data product powered by a real-time analytics pipeline:
+    
+    * 🛰️ **Live Satellite Telemetry (NASA POWER API):** When you input coordinates, the backend pings NASA's REST API to fetch over 2 decades of historical solar irradiance data for your exact micro-location.
+    * 📍 **Dynamic Geocoding (Nominatim):** Coordinates are reverse-geocoded to pinpoint your State, triggering a lookup against a custom database of 36 regional electricity tariffs.
+    * 🦆 **In-Memory SQL Analytics (DuckDB):** The raw JSON data from NASA is converted into Pandas DataFrames and aggregated in milliseconds using DuckDB's lightning-fast in-memory SQL engine.
+    * 🏛️ **Business Logic:** System sizing and out-of-pocket costs are dynamically calculated using the latest PM-Surya Ghar subsidy capacity tiers.
+    
+    *Architected and deployed by Sai Ragadeep using Python, DuckDB, and Streamlit.*
+    """)
