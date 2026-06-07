@@ -65,3 +65,17 @@ if st.sidebar.button("Calculate ROI", type="primary"):
             
         except Exception as e:
             st.error(f"An error occurred: {e}")
+# --- ARCHITECTURE EXPANDER ---
+            st.markdown("---")
+            with st.expander("🛠️ How this engine works (Under the Hood)"):
+                st.markdown("""
+                ### The Data Engineering Pipeline
+                This application is not a static calculator. It is a dynamic data product powered by a real-time analytics pipeline:
+                
+                * 🛰️ **Live Satellite Telemetry (NASA POWER API):** When you input coordinates, the backend pings NASA's REST API to fetch over 2 decades of historical solar irradiance data for your exact micro-location.
+                * 📍 **Dynamic Geocoding (Nominatim):** Coordinates are reverse-geocoded to pinpoint your State, triggering a lookup against a custom database of 36 regional electricity tariffs.
+                * 🦆 **In-Memory SQL Analytics (DuckDB):** The raw JSON data from NASA is converted into Pandas DataFrames and aggregated in milliseconds using DuckDB's lightning-fast in-memory SQL engine.
+                * 🏛️ **Business Logic:** System sizing and out-of-pocket costs are dynamically calculated using the latest PM-Surya Ghar subsidy capacity tiers.
+                
+                *Architected and deployed by Sai Ragadeep using Python, DuckDB, and Streamlit.*
+                """)
